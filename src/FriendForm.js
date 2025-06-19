@@ -2,6 +2,11 @@ import React from 'react';
 import { Formik, Form, Field, FieldArray, ErrorMessage, useFormikContext } from 'formik';
 import * as Yup from 'yup';
 import { locations, getPlansForLocation } from './data/insuranceData'; // Importa los datos
+import CustomInput from './components/CustomInput'; 
+import {isValidEcuadorianCedula} from './utils/validationUtils'; 
+import trash from './assets/trash.svg'; // Asegúrate de tener esta imagen en la ruta correcta
+import arriba from './assets/arriba.svg'; // Asegúrate de tener esta imagen en la ruta correcta
+import abajo from './assets/abajo.svg'; // Asegúrate de tener esta imagen en la ruta correcta
 
 const InsurancePlanSelector = ({ friendIndex, selectedLocation }) => {
   const { values, setFieldValue } = useFormikContext();
@@ -57,8 +62,8 @@ const FriendForm = () => {
   const initialValues = {
     userName: '',
     friends: [
-        { name: 'Ana', age: '28', location: '', insurancePlan: '' }, 
-        { name: 'Luis', age: '32', location: '', insurancePlan: '' },
+        { name: 'Ana', age: '28', location: '', insurancePlan: '' , cedula: '' }, 
+        { name: 'Luis', age: '32', location: '', insurancePlan: '' , cedula: '' },
     ],
   };
   
@@ -83,6 +88,16 @@ const FriendForm = () => {
             then: (schema) => schema.required('Plan de seguro es requerido'),
             otherwise: (schema) => schema.optional(),
           }),
+          cedula: Yup.string()
+            .matches(/^\d+$/, 'La cédula debe contener solo números')
+            .length(10, 'La cédula debe tener exactamente 10 dígitos')
+            .test('is-valid-cedula', 'Cédula ecuatoriana inválida', (value) => {
+              if (!value) return true; // Permite campos vacíos
+              const validationResult = isValidEcuadorianCedula(value);
+              return validationResult === true; // Retorna true si es válida, o false si no
+            })
+            .required('Cédula es requerida')
+            
         })
       )
       .min(1, 'Debes agregar al menos un amigo')
@@ -115,19 +130,18 @@ const FriendForm = () => {
               >
                 Tu Nombre:
               </label>
-              <Field
+              {/* <Field
                 name="userName"
                 type="text"
                 className={`shadow appearance-none border ${
                   errors.userName && touched.userName ? 'border-red-500' : 'border-gray-300'
                 } rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500`}
-              /> 
-              <ErrorMessage
+              />  */}
+              <CustomInput
                 name="userName"
-                component="p"
-                className="text-red-500 text-xs italic mt-1"
+                type="text"
+                placeholder="Ej: Juan Pérez"
               />
-              
               
             </div>
 
@@ -148,8 +162,34 @@ const FriendForm = () => {
                             {/* --- BOTONES DE ACCIÓN PARA CADA AMIGO --- */}
                             <div className="flex space-x-2">
                               {/* // Boton para eliminar */}
-                                
+                              <button
+                                type="button"
+                                onClick={() => remove(index)}
+                                className="text-red-500 hover:text-red-700 focus:outline-none"
+                              >
+                                <img src={trash} alt="Eliminar" className="inline-block w-5 h-5" />
+                                </button>
                             </div>
+                            <div className="flex space-x-2">
+                              {/* // Boton para mover */}
+                              <button
+                                type="button"
+                                onClick={() => move(index, index - 1)}
+                                className="text-red-500 hover:text-red-700 focus:outline-none"
+                              >
+                                <img src={arriba} alt="Mover arriba" className="inline-block w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => move(index, index + 1)}
+                                className="text-red-500 hover:text-red-700 focus:outline-none"
+                              >
+                                <img src={abajo} alt="Mover abajo" className="inline-block w-5 h-5" />
+                              </button>
+                              </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
@@ -195,6 +235,22 @@ const FriendForm = () => {
                               className="text-red-500 text-xs italic mt-1"
                             />
                           </div>
+                          
+                          <div>
+                            <label
+                              htmlFor={`friends.${index}.cedula`}
+                              className="block text-gray-700 text-sm font-bold mb-1"
+                            >
+                              Identificación (Cédula):
+                            </label>
+                            <CustomInput
+                              name={`friends.${index}.cedula`}
+                              type="text"
+                              placeholder="Ej: 12345678"
+                              />
+                          
+                          </div>
+
                           <div>
                             <label
                               htmlFor={`friends.${index}.location`}
@@ -241,7 +297,7 @@ const FriendForm = () => {
                   )}
                   <button
                     type="button"
-                    onClick={() => push({ name: '', age: '' })}
+                    onClick={() => push({ name: '', age: '', location: '', insurancePlan: '', cedula: '' })}
                     className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
                   >
                     Añadir Amigo
